@@ -1,5 +1,8 @@
 use common::rlp::{self, Decodable, Encodable, Nullable};
+use serde::Serialize;
 
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Message {
     pub sn: Nullable<i64>,
     pub fee: u128,

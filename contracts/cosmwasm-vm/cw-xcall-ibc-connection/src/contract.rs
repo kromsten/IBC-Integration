@@ -2,7 +2,7 @@ use common::{
     ibc::{core::ics04_channel::channel::State, Height},
     rlp::{self},
 };
-use cosmwasm_std::{coins, BankMsg, IbcChannel};
+use cosmwasm_std::{coins, BankMsg, IbcMsg, IbcChannel, IbcTimeout};
 use cw_common::raw_types::channel::RawPacket;
 use cw_xcall_lib::network_address::NetId;
 
@@ -407,18 +407,17 @@ impl<'a> CwIbcConnection<'a> {
         }
     }
 
-    #[cfg(feature = "native_ibc")]
+    /* #[cfg(feature = "native_ibc")]
     fn create_packet_response(&self, deps: Deps, env: Env, data: Binary) -> IbcMsg {
-        let ibc_config = self.ibc_config().may_load(deps.storage).unwrap().unwrap();
-
+        let ibc_config = self.get_ibc_config(deps.storage).unwrap();
         let timeout = IbcTimeout::with_timestamp(env.block.time.plus_seconds(300));
-
         IbcMsg::SendPacket {
             channel_id: ibc_config.dst_endpoint().channel_id.clone(),
             data,
             timeout,
         }
-    }
+    } */
+
     fn reply_ack_on_error(&self, reply: Reply) -> Result<Response, ContractError> {
         match reply.result {
             SubMsgResult::Ok(_) => Ok(Response::new()),

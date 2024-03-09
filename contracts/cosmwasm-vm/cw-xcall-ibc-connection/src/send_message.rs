@@ -1,5 +1,5 @@
 use common::rlp::Nullable;
-use cosmwasm_std::{Coin, DepsMut, Env, MessageInfo, Response, Storage, Uint128};
+use cosmwasm_std::{to_binary, Coin, CosmosMsg, DepsMut, Empty, Env, IbcMsg, IbcTimeout, IbcTimeoutBlock, MessageInfo, Response, Storage, SubMsg, Uint128};
 use cw_xcall_lib::network_address::NetId;
 
 use crate::{
@@ -8,12 +8,14 @@ use crate::{
     types::{message::Message, LOG_PREFIX},
 };
 
+pub const HOST_FORWARD_REPLY_ID : u64 = 1;
+
 impl<'a> CwIbcConnection<'a> {
     pub fn send_message(
         &self,
         deps: DepsMut,
         info: MessageInfo,
-        _env: Env,
+        env: Env,
         nid: NetId,
         sn: i64,
         message: Vec<u8>,
@@ -58,7 +60,7 @@ impl<'a> CwIbcConnection<'a> {
 
         #[cfg(feature = "native_ibc")]
         {
-            let packet = self.create_request_packet(deps, env, timeout_height, msg.clone())?;
+            let packet = self.create_request_packet(env, ibc_config,timeout_height.revision_height(), msg.clone())?;
 
             let submessage: SubMsg<Empty> =
                 SubMsg::reply_always(CosmosMsg::Ibc(packet), HOST_FORWARD_REPLY_ID);
@@ -126,19 +128,15 @@ impl<'a> CwIbcConnection<'a> {
     /// a `Result` with an `IbcMsg` on success or a `ContractError` on failure.
     fn create_request_packet(
         &self,
-        deps: DepsMut,
         env: Env,
-        time_out_height: u64,
+        ibc_config: IbcConfig,
+        timeout_height: u64,
         message: Message,
     ) -> Result<IbcMsg, ContractError> {
-        let ibc_config = self
-            .ibc_config()
-            .load(deps.as_ref().storage)
-            .map_err(ContractError::Std)?;
 
         let timeout_block = IbcTimeoutBlock {
             revision: 0,
-            height: time_out_height,
+            height: timeout_height,
         };
         let timeout = IbcTimeout::with_both(timeout_block, env.block.time.plus_seconds(300));
 
