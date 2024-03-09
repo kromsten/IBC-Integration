@@ -1,5 +1,5 @@
 use common::rlp::Nullable;
-use cosmwasm_std::{to_binary, Coin, CosmosMsg, DepsMut, Empty, Env, IbcMsg, IbcTimeout, IbcTimeoutBlock, MessageInfo, Response, Storage, SubMsg, Uint128};
+use cosmwasm_std::{to_binary, Coin, CosmosMsg, DepsMut, Empty, Env, IbcMsg, IbcTimeout, MessageInfo, Response, Storage, SubMsg, Uint128};
 use cw_xcall_lib::network_address::NetId;
 
 use crate::{
@@ -29,29 +29,18 @@ impl<'a> CwIbcConnection<'a> {
             return self.write_acknowledgement(deps.storage, &ibc_config, message, -sn);
         }
 
-        let sequence_number_host = self.query_host_sequence_no(deps.as_ref(), &ibc_config)?;
         let network_fee = self.get_network_fees(deps.as_ref().storage, nid.clone());
         let mut total_fee = network_fee.send_packet_fee;
 
-        if sn > 0 {
-            total_fee += network_fee.ack_fee;
-            self.add_unclaimed_ack_fees(
-                deps.storage,
-                &nid,
-                sequence_number_host,
-                network_fee.ack_fee,
-            )?;
-        }
-        let config = self.get_config(deps.storage)?;
 
+        let config = self.get_config(deps.storage)?;
         let fund = get_amount_for_denom(&info.funds, config.denom);
 
         if fund < total_fee.into() {
             return Err(ContractError::InsufficientFunds {});
         }
 
-        let timeout_height =
-            self.query_timeout_height(deps.as_ref(), &ibc_config.src_endpoint().channel_id)?;
+
         let msg = Message {
             sn: Nullable::new(Some(sn)),
             fee: network_fee.send_packet_fee,
@@ -60,18 +49,30 @@ impl<'a> CwIbcConnection<'a> {
 
         #[cfg(feature = "native_ibc")]
         {
-            let packet = self.create_request_packet(env, ibc_config,timeout_height.revision_height(), msg.clone())?;
-
-            let submessage: SubMsg<Empty> =
-                SubMsg::reply_always(CosmosMsg::Ibc(packet), HOST_FORWARD_REPLY_ID);
+            let packet = self.create_request_packet(env, ibc_config, msg.clone())?;
 
             Ok(Response::new()
-                .add_submessage(submessage)
+                .add_message(CosmosMsg::Ibc(packet))
                 .add_attribute("method", "send_message"))
         }
 
         #[cfg(not(feature = "native_ibc"))]
         {
+
+            let sequence_number_host = self.query_host_sequence_no(deps.as_ref(), &ibc_config)?;
+            
+            if sn > 0 {
+                total_fee += network_fee.ack_fee;
+                self.add_unclaimed_ack_fees(
+                    deps.storage,
+                    &nid,
+                    sequence_number_host,
+                    network_fee.ack_fee,
+                )?;
+            }
+
+            let timeout_height = self.query_timeout_height(deps.as_ref(), &ibc_config.src_endpoint().channel_id)?;
+
             let packet_data =
                 self.create_packet(ibc_config, timeout_height, sequence_number_host, msg);
 
@@ -130,19 +131,14 @@ impl<'a> CwIbcConnection<'a> {
         &self,
         env: Env,
         ibc_config: IbcConfig,
-        timeout_height: u64,
         message: Message,
     ) -> Result<IbcMsg, ContractError> {
 
-        let timeout_block = IbcTimeoutBlock {
-            revision: 0,
-            height: timeout_height,
-        };
-        let timeout = IbcTimeout::with_both(timeout_block, env.block.time.plus_seconds(300));
+        let timeout = IbcTimeout::with_timestamp(env.block.time.plus_seconds(300));
 
         Ok(IbcMsg::SendPacket {
-            channel_id: ibc_config.dst_endpoint().channel_id.clone(),
-            data: to_binary(&message).unwrap(),
+            channel_id: ibc_config.src_endpoint().channel_id.clone(),
+            data: to_binary(&message)?,
             timeout,
         })
     }
