@@ -665,16 +665,26 @@ impl<'a> CwIbcConnection<'a> {
         let destination = channel.counterparty_endpoint.clone();
         let channel_id = source.channel_id.clone();
 
-        let our_port = self.get_port(deps.storage)?;
+        let config = self.get_config(deps.storage)?; 
+        let our_port = config.port_id.clone();
+        
         cw_println!(
             deps,
             "[IBCConnection]: Check if ports match : {:?} vs {:?}",
             our_port,
             source.port_id
         );
+
+        #[cfg(not(feature = "native_ibc"))]
         if our_port != source.port_id {
             return Err(ContractError::InvalidPortId);
         }
+
+
+        self.store_config(deps.storage, &Config{
+            port_id: source.port_id.clone(),
+            ..config
+        })?;
 
         let nid =
             self.get_counterparty_nid(deps.storage, &channel.connection_id, &destination.port_id)?;
