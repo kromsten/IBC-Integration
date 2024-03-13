@@ -3,20 +3,17 @@ use std::str::FromStr;
 
 use common::rlp::{self, Nullable};
 use cosmwasm_std::{
-    testing::mock_env, to_binary, Addr, Binary, IbcAcknowledgement, IbcChannel,
-    IbcChannelConnectMsg::OpenAck, IbcChannelOpenMsg::OpenInit, IbcChannelOpenMsg::OpenTry,
-    IbcEndpoint, IbcPacket, IbcPacketAckMsg, IbcPacketReceiveMsg, IbcTimeout, IbcTimeoutBlock,
+    testing::mock_env, to_binary, Addr, Binary,
+    IbcEndpoint, IbcPacket, IbcPacketReceiveMsg, IbcTimeout, IbcTimeoutBlock,
 };
 
 use cw_common::from_binary_response;
-use cw_common::types::Ack;
 use cw_xcall_ibc_connection::ack::{on_ack_failure, on_ack_success};
 use cw_xcall_ibc_connection::types::config::Config;
 use cw_xcall_lib::network_address::{NetId, NetworkAddress};
 
 use cw_xcall::types::response::CSMessageResponse;
 use cw_xcall_ibc_connection::msg::InstantiateMsg;
-use cw_xcall_ibc_connection::types::channel_config::ChannelConfig;
 use cw_xcall_ibc_connection::types::message::Message;
 use cw_xcall_ibc_connection::{execute, instantiate, query};
 use setup::*;
@@ -25,7 +22,7 @@ use account::admin_one;
 use account::alice;
 
 use cosmwasm_std::from_binary;
-use cw_common::xcall_connection_msg::{ExecuteMsg, QueryMsg};
+use cw_common::xcall_connection_msg::{ChannelConfig, ExecuteMsg, QueryMsg};
 use cw_xcall::types::message::CSMessage;
 use cw_xcall::types::request::CSMessageRequest;
 use cw_xcall_ibc_connection::state::CwIbcConnection;

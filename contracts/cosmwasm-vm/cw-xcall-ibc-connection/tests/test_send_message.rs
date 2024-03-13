@@ -9,13 +9,12 @@ use cw_xcall_ibc_connection::types::config::Config;
 use cw_xcall_ibc_connection::types::network_fees::NetworkFees;
 use cw_xcall_lib::network_address::NetId;
 
-use cw_xcall_ibc_connection::types::channel_config::ChannelConfig;
 use setup::*;
 pub mod account;
 use account::alice;
 
 use cosmwasm_std::{ContractResult, Env, OwnedDeps, SystemResult, WasmQuery};
-use cw_common::xcall_connection_msg::ExecuteMsg;
+use cw_common::xcall_connection_msg::{ChannelConfig, ExecuteMsg};
 
 use cw_xcall_ibc_connection::state::{CwIbcConnection, IbcConfig};
 

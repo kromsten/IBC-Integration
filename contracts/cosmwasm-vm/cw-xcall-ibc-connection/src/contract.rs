@@ -2,8 +2,8 @@ use common::{
     ibc::{core::ics04_channel::channel::State, Height},
     rlp::{self},
 };
-use cosmwasm_std::{coins, BankMsg, IbcMsg, IbcChannel, IbcTimeout};
-use cw_common::raw_types::channel::RawPacket;
+use cosmwasm_std::{coins, BankMsg, IbcChannel};
+use cw_common::{raw_types::channel::RawPacket, xcall_connection_msg::ChannelConfig};
 use cw_xcall_lib::network_address::NetId;
 
 use cw_common::cw_println;
@@ -15,7 +15,7 @@ use crate::{
         XCALL_HANDLE_ERROR_REPLY_ID, XCALL_HANDLE_MESSAGE_REPLY_ID,
     },
     types::{
-        channel_config::ChannelConfig, config::Config, config_response::to_config_response,
+        config::Config, config_response::to_config_response,
         connection_config::ConnectionConfig, message::Message, LOG_PREFIX,
     },
 };
@@ -245,6 +245,22 @@ impl<'a> CwIbcConnection<'a> {
                     .get_channel_config(deps.storage, &ibc_config.src_endpoint().channel_id)
                     .unwrap();
                 to_binary(&to_config_response(ibc_config, channel_config))
+            },
+            QueryMsg::GetChannelConfig { channel_id } => {
+                let config = self.get_channel_config(deps.storage, &channel_id).unwrap();
+                to_binary(&config)
+            },
+            QueryMsg::GetConnectionConfig { connection_id } => {
+                let config = self.get_connection_config(deps.storage, &connection_id).unwrap();
+                to_binary(&config)
+            },
+            QueryMsg::GetIncomingPackets {} => {
+                let packets = self.get_incoming_packets(deps.storage).unwrap();
+                to_binary(&packets)
+            },
+            QueryMsg::GetConfiguredNetworks {} => {
+                let networks = self.get_configured_networks(deps.storage).unwrap();
+                to_binary(&networks)
             }
         }
     }
@@ -574,7 +590,7 @@ impl<'a> CwIbcConnection<'a> {
         let channel_config = self.get_channel_config(deps.as_ref().storage, &channel)?;
         let nid = channel_config.counterparty_nid;
 
-        let submsg = self.call_xcall_handle_message(deps.storage, &nid, acknowledgement.data.0)?;
+        //let submsg = self.call_xcall_handle_message(deps.storage, &nid, acknowledgement.data.0)?;
 
         let bank_msg = self.settle_unclaimed_ack_fee(
             deps.storage,
@@ -585,7 +601,8 @@ impl<'a> CwIbcConnection<'a> {
 
         Ok(Response::new()
             .add_messages(bank_msg)
-            .add_submessage(submsg))
+        //    .add_submessage(submsg)
+        )
     }
     /// This function handles a timeout event for an IBC packet and sends a reply message with an error
     /// code.

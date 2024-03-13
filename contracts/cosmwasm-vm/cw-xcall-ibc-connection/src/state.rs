@@ -1,8 +1,10 @@
+use cosmwasm_std::Order;
+use cw_common::xcall_connection_msg::ChannelConfig;
 use cw_storage_plus::Map;
 use cw_xcall_lib::network_address::NetId;
 
 use crate::types::{
-    channel_config::ChannelConfig, config::Config, connection_config::ConnectionConfig,
+    config::Config, connection_config::ConnectionConfig,
     network_fees::NetworkFees,
 };
 
@@ -401,10 +403,12 @@ impl<'a> CwIbcConnection<'a> {
             .load(store, (channel_id.to_owned(), sn))
             .map_err(ContractError::Std)
     }
+
     pub fn remove_incoming_packet(&self, store: &mut dyn Storage, channel_id: &str, sequence: i64) {
         self.incoming_packets
             .remove(store, (channel_id.to_owned(), sequence))
     }
+    
 
     pub fn store_incoming_packet(
         &self,
@@ -416,5 +420,26 @@ impl<'a> CwIbcConnection<'a> {
         self.incoming_packets
             .save(store, (channel_id.to_owned(), sn), &packet)
             .map_err(ContractError::Std)
+    }
+
+     // TODO: pagination
+     pub fn get_incoming_packets(
+        &self,
+        store: &dyn Storage,
+    ) -> Result<Vec<((String, i64), CwPacket)>, ContractError> {
+        let res = self.incoming_packets
+            .range(store, None, None, Order::Ascending)
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(res)
+    }
+
+    pub fn get_configured_networks(
+        &self,
+        store: &dyn Storage,
+    ) -> Result<Vec<((String, String), NetId)>, ContractError> {
+        let res = self.configured_networks
+            .range(store, None, None, Order::Ascending)
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(res)
     }
 }
