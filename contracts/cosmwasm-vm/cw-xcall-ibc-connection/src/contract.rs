@@ -2,11 +2,13 @@ use common::{
     ibc::{core::ics04_channel::channel::State, Height},
     rlp::{self},
 };
-use cosmwasm_std::{coins, BankMsg, IbcChannel};
+use cosmwasm_std::{coins, BankMsg, IbcChannel, Order};
 use cw_common::{raw_types::channel::RawPacket, xcall_connection_msg::ChannelConfig};
 use cw_xcall_lib::network_address::NetId;
 
 use cw_common::cw_println;
+
+use self::state::{IBC_ACKS, IBC_RES};
 
 use super::*;
 use crate::{
@@ -261,7 +263,40 @@ impl<'a> CwIbcConnection<'a> {
             QueryMsg::GetConfiguredNetworks {} => {
                 let networks = self.get_configured_networks(deps.storage).unwrap();
                 to_binary(&networks)
-            }
+            },
+            QueryMsg::GetReplies {} => {
+                let res = REPLIES.range(
+                    deps.storage, 
+                    None, 
+                    None, 
+                    Order::Descending
+                ).map(|r| r.unwrap().1)
+                .collect::<Vec<Reply>>();
+
+                to_binary(&res)
+            },
+
+            QueryMsg::GetIbcAcks {  } => {
+                let res = IBC_ACKS.range(
+                    deps.storage, 
+                    None, 
+                    None, 
+                    Order::Descending
+                ).map(|r| r.unwrap().1)
+                .collect::<Vec<CwPacketAckMsg>>();
+                to_binary(&res)
+            },
+
+            QueryMsg::GetIbcResponses { } => {
+                let res = IBC_RES.range(
+                    deps.storage, 
+                    None, 
+                    None, 
+                    Order::Descending
+                ).map(|r| r.unwrap().1)
+                .collect::<Vec<CwPacketReceiveMsg>>();
+                to_binary(&res)
+            },
         }
     }
     /// This function handles different types of reply messages and calls corresponding functions based on

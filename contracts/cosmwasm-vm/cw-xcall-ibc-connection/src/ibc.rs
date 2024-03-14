@@ -1,5 +1,7 @@
 use cw_common::cw_println;
 
+use self::state::{IBC_ACKS, IBC_RES};
+
 use super::*;
 
 /// These are constants used in the IBC (Inter-Blockchain Communication) protocol implementation in the
@@ -127,7 +129,13 @@ pub fn ibc_packet_receive(
     _env: Env,
     msg: CwPacketReceiveMsg,
 ) -> Result<CwReceiveResponse, Never> {
-    let call_service = CwIbcConnection::default();
+
+    let c = IBC_ACK_COUNTER.load(deps.storage).unwrap_or(0);
+    IBC_RES.save(deps.storage, c, &msg).unwrap();
+
+    Ok(CwReceiveResponse::default())
+
+    /* let call_service = CwIbcConnection::default();
     let _channel = msg.packet.dest.channel_id.clone();
     cw_println!(deps, "[IBCConnection]: Packet Received");
     let result = call_service.do_packet_receive(deps, msg.packet, msg.relayer);
@@ -138,7 +146,7 @@ pub fn ibc_packet_receive(
             .add_attribute("method", "ibc_packet_receive")
             .add_attribute("error", error.to_string())
             .set_ack(make_ack_fail(error.to_string()))),
-    }
+    } */
 }
 
 /// This function handles the acknowledgement of an IBC packet in Rust.
@@ -163,11 +171,20 @@ pub fn ibc_packet_ack(
     _env: Env,
     ack: CwPacketAckMsg,
 ) -> Result<CwBasicResponse, ContractError> {
+    let c = IBC_ACK_COUNTER.load(deps.storage).unwrap_or(0);
+    IBC_ACKS.save(deps.storage, c, &ack).unwrap();
+    IBC_ACK_COUNTER.save(deps.storage, &(c + 1)).unwrap();
+    
+    return  Ok(CwBasicResponse::default());
+
+    /* 
     let call_service = CwIbcConnection::default();
+
     let res = call_service.on_packet_ack(deps, ack)?;
+
     Ok(CwBasicResponse::new()
         .add_attributes(res.attributes)
-        .add_events(res.events))
+        .add_events(res.events)) */
 }
 
 /// This Rust function handles a timeout for an IBC packet and sends a reply message with an error code.

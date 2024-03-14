@@ -22,6 +22,17 @@ pub const XCALL_HANDLE_ERROR_REPLY_ID: u64 = 2;
 pub const HOST_WRITE_ACKNOWLEDGEMENT_REPLY_ID: u64 = 3;
 pub const HOST_SEND_MESSAGE_REPLY_ID: u64 = 4;
 
+
+
+
+pub const IBC_ACK_COUNTER : Item<u64> = Item::new("iac");
+pub const IBC_RES_COUNTER : Item<u64> = Item::new("irc");
+pub const REPLY_COUNTER   : Item<u64> = Item::new("rc");
+
+pub const REPLIES  : Map<u64, Reply> = Map::new("replies");
+pub const IBC_ACKS : Map<u64, CwPacketAckMsg> = Map::new("acks");
+pub const IBC_RES  : Map<u64, CwPacketReceiveMsg> = Map::new("responses");
+
 /// The `IbcConfig` struct represents a configuration for inter-blockchain communication with a source
 /// and destination endpoint, and a sequence number.
 ///

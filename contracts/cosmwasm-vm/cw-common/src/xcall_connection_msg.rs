@@ -4,6 +4,7 @@ use crate::cw_types::{
 };
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::{IbcPacket, Reply};
 use cw_xcall_lib::network_address::NetId;
 
 #[cw_serde]
@@ -82,6 +83,24 @@ pub struct ConfigResponse {
 }
 
 #[cw_serde]
+pub struct ChannelConfig {
+    pub client_id: String,
+    pub timeout_height: u64,
+    pub counterparty_nid: NetId,
+}
+
+
+#[cw_serde]
+pub struct ConnectionConfig {
+    pub client_id: String,
+    pub timeout_height: u64,
+}
+
+pub type IncomingPackets = Vec<((String, i64), IbcPacket)>;
+pub type ConfiguredNetworks = Vec<((String, String), NetId)>;
+
+
+#[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(String)]
@@ -94,4 +113,26 @@ pub enum QueryMsg {
     GetUnclaimedFee { nid: NetId, relayer: String },
     #[returns(ConfigResponse)]
     GetIbcConfig { nid: NetId },
+    #[returns(ChannelConfig)]
+    GetChannelConfig {
+        channel_id: String,
+    },
+    #[returns(ConnectionConfig)]
+    GetConnectionConfig {
+        connection_id: String,
+    },
+    #[returns(IncomingPackets)]
+    GetIncomingPackets {},
+
+    #[returns(ConfiguredNetworks)]
+    GetConfiguredNetworks {},
+
+    #[returns(Vec<Reply>)]
+    GetReplies {},
+
+    #[returns(Vec<u8>)]
+    GetIbcAcks {},
+
+    #[returns(Vec<u8>)]
+    GetIbcResponses {},
 }
