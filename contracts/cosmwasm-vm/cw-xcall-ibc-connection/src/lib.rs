@@ -24,6 +24,7 @@ use crate::{
     state::{CwIbcConnection, IbcConfig, ACK_FAILURE_ID},
     types::storage_keys::StorageKey,
 };
+use ack::make_ack_success;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
     entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Never, Reply, Response,
@@ -160,7 +161,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
     REPLY_COUNTER.save(deps.storage, &(c + 1))?;
     /* let call_service = CwIbcConnection::default();
     call_service.reply(deps, env, msg) */
-    Ok(Response::default())
+    Ok(Response::default().set_data(make_ack_success()))
 }
 
 #[cw_serde]

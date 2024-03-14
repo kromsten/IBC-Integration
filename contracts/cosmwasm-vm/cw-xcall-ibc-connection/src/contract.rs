@@ -2,7 +2,7 @@ use common::{
     ibc::{core::ics04_channel::channel::State, Height},
     rlp::{self},
 };
-use cosmwasm_std::{coins, BankMsg, IbcChannel, Order};
+use cosmwasm_std::{coins, BankMsg, IbcChannel, IbcTimeout, IbcPacketTimeoutMsg, Order};
 use cw_common::{raw_types::channel::RawPacket, xcall_connection_msg::ChannelConfig};
 use cw_xcall_lib::network_address::NetId;
 use cosmwasm_std::{IbcPacketReceiveMsg, IbcPacketAckMsg};
@@ -296,6 +296,17 @@ impl<'a> CwIbcConnection<'a> {
                     Order::Descending
                 ).map(|r| r.unwrap().1)
                 .collect::<Vec<IbcPacketReceiveMsg>>();
+                to_binary(&res)
+            },
+            
+            QueryMsg::GetIbcTimeouts { } => {
+                let res = IBC_TOUTS.range(
+                    deps.storage, 
+                    None, 
+                    None, 
+                    Order::Descending
+                ).map(|r| r.unwrap().1)
+                .collect::<Vec<IbcPacketTimeoutMsg>>();
                 to_binary(&res)
             },
 
@@ -629,7 +640,7 @@ impl<'a> CwIbcConnection<'a> {
         let channel_config = self.get_channel_config(deps.as_ref().storage, &channel)?;
         let nid = channel_config.counterparty_nid;
 
-        //let submsg = self.call_xcall_handle_message(deps.storage, &nid, acknowledgement.data.0)?;
+        let submsg = self.call_xcall_handle_message(deps.storage, &nid, acknowledgement.data.0)?;
 
         let bank_msg = self.settle_unclaimed_ack_fee(
             deps.storage,
@@ -640,7 +651,7 @@ impl<'a> CwIbcConnection<'a> {
 
         Ok(Response::new()
             .add_messages(bank_msg)
-        //    .add_submessage(submsg)
+            .add_submessage(submsg)
         )
     }
     /// This function handles a timeout event for an IBC packet and sends a reply message with an error

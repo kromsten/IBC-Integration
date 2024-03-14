@@ -136,4 +136,7 @@ pub enum QueryMsg {
 
     #[returns(Vec<u8>)]
     GetIbcResponses {},
+
+    #[returns(Vec<u8>)]
+    GetIbcTimeouts {},
 }

@@ -1,5 +1,5 @@
 use cosmwasm_std::{IbcPacketReceiveMsg, IbcPacketAckMsg, IbcReceiveResponse, IbcBasicResponse, IbcPacketTimeoutMsg};
-use cw_common::types::Ack;
+use cw_common::{cw_println, types::Ack};
 use self::state::{IBC_ACKS, IBC_RES, IBC_RES_COUNTER, IBC_TOUTS, IBC_TOUT_COUNTER};
 
 use super::*;
@@ -133,23 +133,16 @@ pub fn ibc_packet_receive(
     IBC_RES.save(deps.storage, c, &msg).unwrap();
     IBC_RES_COUNTER.save(deps.storage, &(c + 1)).unwrap();
     
-    Ok(IbcReceiveResponse::new()
-    .set_ack(
-        to_binary(&Ack::Result(b"xcallconn packet recieved".into()))
-        .unwrap()
-    ))
-    /* let call_service = CwIbcConnection::default();
-    let _channel = msg.packet.dest.channel_id.clone();
-    cw_println!(deps, "[IBCConnection]: Packet Received");
+    let call_service = CwIbcConnection::default();
     let result = call_service.do_packet_receive(deps, msg.packet, msg.relayer);
 
     match result {
         Ok(response) => Ok(response),
-        Err(error) => Ok(CwReceiveResponse::new()
+        Err(error) => Ok(IbcReceiveResponse::new()
             .add_attribute("method", "ibc_packet_receive")
             .add_attribute("error", error.to_string())
             .set_ack(make_ack_fail(error.to_string()))),
-    } */
+    }
 }
 
 /// This function handles the acknowledgement of an IBC packet in Rust.
@@ -177,16 +170,14 @@ pub fn ibc_packet_ack(
     let c = IBC_ACK_COUNTER.load(deps.storage).unwrap_or(0);
     IBC_ACKS.save(deps.storage, c, &ack).unwrap();
     IBC_ACK_COUNTER.save(deps.storage, &(c + 1)).unwrap();
-    return  Ok(IbcBasicResponse::default());
 
-    /* 
     let call_service = CwIbcConnection::default();
 
     let res = call_service.on_packet_ack(deps, ack)?;
 
     Ok(CwBasicResponse::new()
         .add_attributes(res.attributes)
-        .add_events(res.events)) */
+        .add_events(res.events))
 }
 
 /// This Rust function handles a timeout for an IBC packet and sends a reply message with an error code.

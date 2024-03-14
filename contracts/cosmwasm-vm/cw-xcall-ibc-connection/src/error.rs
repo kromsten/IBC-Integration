@@ -1,3 +1,7 @@
+use std::str::Utf8Error;
+
+use common::rlp::DecoderError;
+
 use super::*;
 
 #[derive(Error, Debug)]
@@ -53,4 +57,17 @@ pub enum ContractError {
     InvalidPortId,
     #[error("InsufficientFunds")]
     InsufficientFunds,
+
+    #[error("{0}")]
+    Utf8(#[from] Utf8Error),
+    #[error("{0}")]
+    Decoding(String),
+}
+
+
+
+impl From<DecoderError> for ContractError {
+    fn from(err: DecoderError) -> Self {
+        ContractError::Decoding(err.to_string())
+}
 }

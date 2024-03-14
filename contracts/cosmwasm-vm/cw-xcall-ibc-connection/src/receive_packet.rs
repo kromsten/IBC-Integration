@@ -1,7 +1,7 @@
 use std::str::from_utf8;
 
 use super::*;
-use crate::types::message::Message;
+use crate::{ack::make_ack_success, types::message::Message};
 
 use common::rlp;
 use cosmwasm_std::{coins, BankMsg, DepsMut};
@@ -32,18 +32,18 @@ impl<'a> CwIbcConnection<'a> {
         relayer: Addr,
     ) -> Result<CwReceiveResponse, ContractError> {
         let channel = packet.dest.channel_id.clone();
-        let n_message: Message = rlp::decode(&packet.data.0).unwrap();
+        let n_message: Message = rlp::decode(&packet.data.0)?;
         let channel_config = self.get_channel_config(deps.as_ref().storage, &channel)?;
         let nid = channel_config.counterparty_nid;
         let denom = self.get_denom(deps.as_ref().storage)?;
         if n_message.sn.is_none() {
-            let receiver_address = from_utf8(&n_message.data).unwrap();
+            let receiver_address = from_utf8(&n_message.data)?;
             let amount = n_message.fee;
             let msg = BankMsg::Send {
                 to_address: receiver_address.to_string(),
                 amount: coins(amount, denom),
             };
-            return Ok(CwReceiveResponse::new().add_message(msg));
+            return Ok(CwReceiveResponse::new().add_message(msg).set_ack(make_ack_success()));
         }
         self.add_unclaimed_packet_fees(deps.storage, &nid, relayer.as_str(), n_message.fee)?;
 
@@ -56,6 +56,9 @@ impl<'a> CwIbcConnection<'a> {
         let data = n_message.data;
         let xcall_submessage = self.call_xcall_handle_message(deps.storage, &nid, data)?;
 
-        Ok(CwReceiveResponse::new().add_submessage(xcall_submessage))
+        Ok(CwReceiveResponse::new()
+            .set_ack(make_ack_success())
+            .add_submessage(xcall_submessage)
+        )
     }
 }
