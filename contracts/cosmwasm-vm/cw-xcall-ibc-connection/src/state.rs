@@ -7,7 +7,7 @@ use crate::types::{
     network_fees::NetworkFees,
 };
 
-use cosmwasm_std::{IbcPacketReceiveMsg, IbcPacketAckMsg, Order};
+use cosmwasm_std::{IbcPacketReceiveMsg, IbcPacketAckMsg, IbcPacketTimeoutMsg, Order};
 
 
 use super::*;
@@ -27,13 +27,17 @@ pub const HOST_SEND_MESSAGE_REPLY_ID: u64 = 4;
 
 
 
+
 pub const IBC_ACK_COUNTER : Item<u64> = Item::new("iac");
 pub const IBC_RES_COUNTER : Item<u64> = Item::new("irc");
+pub const IBC_TOUT_COUNTER: Item<u64> = Item::new("itc");
 pub const REPLY_COUNTER   : Item<u64> = Item::new("rc");
 
-pub const REPLIES  : Map<u64, Reply> = Map::new("replies");
 pub const IBC_ACKS : Map<u64, IbcPacketAckMsg> = Map::new("acks");
 pub const IBC_RES  : Map<u64, IbcPacketReceiveMsg> = Map::new("responses");
+pub const IBC_TOUTS : Map<u64, IbcPacketTimeoutMsg> = Map::new("timeouts");
+pub const REPLIES  : Map<u64, Reply> = Map::new("replies");
+
 
 /// The `IbcConfig` struct represents a configuration for inter-blockchain communication with a source
 /// and destination endpoint, and a sequence number.

@@ -1,5 +1,6 @@
-use cosmwasm_std::{IbcPacketReceiveMsg, IbcPacketAckMsg, IbcReceiveResponse, IbcBasicResponse};
-use self::state::{IBC_ACKS, IBC_RES, IBC_RES_COUNTER};
+use cosmwasm_std::{IbcPacketReceiveMsg, IbcPacketAckMsg, IbcReceiveResponse, IbcBasicResponse, IbcPacketTimeoutMsg};
+use cw_common::types::Ack;
+use self::state::{IBC_ACKS, IBC_RES, IBC_RES_COUNTER, IBC_TOUTS, IBC_TOUT_COUNTER};
 
 use super::*;
 
@@ -131,8 +132,12 @@ pub fn ibc_packet_receive(
     let c = IBC_RES_COUNTER.load(deps.storage).unwrap_or(0);
     IBC_RES.save(deps.storage, c, &msg).unwrap();
     IBC_RES_COUNTER.save(deps.storage, &(c + 1)).unwrap();
-    Ok(CwReceiveResponse::default())
-
+    
+    Ok(IbcReceiveResponse::new()
+    .set_ack(
+        to_binary(&Ack::Result(b"xcallconn packet recieved".into()))
+        .unwrap()
+    ))
     /* let call_service = CwIbcConnection::default();
     let _channel = msg.packet.dest.channel_id.clone();
     cw_println!(deps, "[IBCConnection]: Packet Received");
@@ -172,7 +177,7 @@ pub fn ibc_packet_ack(
     let c = IBC_ACK_COUNTER.load(deps.storage).unwrap_or(0);
     IBC_ACKS.save(deps.storage, c, &ack).unwrap();
     IBC_ACK_COUNTER.save(deps.storage, &(c + 1)).unwrap();
-    return  Ok(CwBasicResponse::default());
+    return  Ok(IbcBasicResponse::default());
 
     /* 
     let call_service = CwIbcConnection::default();
@@ -205,9 +210,14 @@ pub fn ibc_packet_ack(
 pub fn ibc_packet_timeout(
     deps: DepsMut,
     _env: Env,
-    msg: CwPacketTimeoutMsg,
-) -> Result<CwBasicResponse, ContractError> {
+    msg: IbcPacketTimeoutMsg,
+) -> Result<IbcBasicResponse, ContractError> {
+    let c = IBC_TOUT_COUNTER.load(deps.storage).unwrap_or(0);
+    IBC_TOUTS.save(deps.storage, c, &msg).unwrap();
+    IBC_TOUT_COUNTER.save(deps.storage, &(c + 1)).unwrap();
+    Ok(IbcBasicResponse::default())
+    /* 
     let call_service = CwIbcConnection::default();
     let res = call_service.on_packet_timeout(deps, msg)?;
-    Ok(CwBasicResponse::new().add_attributes(res.attributes))
+    Ok(CwBasicResponse::new().add_attributes(res.attributes)) */
 }

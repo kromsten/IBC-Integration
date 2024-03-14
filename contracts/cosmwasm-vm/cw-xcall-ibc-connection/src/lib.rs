@@ -29,8 +29,7 @@ use cosmwasm_std::{
     entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Never, Reply, Response,
     StdError, StdResult, Storage, SubMsg, SubMsgResult,
 };
-#[cfg(feature = "native_ibc")]
-use cw_common::cw_types::{CwTimeout, CwTimeoutBlock};
+
 
 use cw2::set_contract_version;
 use cw_common::cw_types::{
@@ -41,7 +40,7 @@ use cw_common::cw_types::{
 
 use cw_common::xcall_connection_msg::{ExecuteMsg, QueryMsg};
 use cw_storage_plus::Item;
-use state::{IBC_ACK_COUNTER, REPLIES, REPLY_COUNTER};
+use state::{IBC_ACKS, IBC_ACK_COUNTER, IBC_RES, IBC_RES_COUNTER, IBC_TOUTS, IBC_TOUT_COUNTER, REPLIES, REPLY_COUNTER};
 use thiserror::Error;
 
 /// This function instantiates a contract using the CwIbcConnection.
@@ -166,8 +165,17 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 
 #[cw_serde]
 pub struct MigrateMsg {}
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     let call_service = CwIbcConnection::default();
+    IBC_ACKS.clear(deps.storage);
+    IBC_RES.clear(deps.storage);
+    IBC_TOUTS.clear(deps.storage);
+    REPLIES.clear(deps.storage);
+    IBC_ACK_COUNTER.save(deps.storage, &0).unwrap();
+    IBC_RES_COUNTER.save(deps.storage, &0).unwrap();
+    IBC_TOUT_COUNTER.save(deps.storage, &0).unwrap();
+    REPLY_COUNTER.save(deps.storage, &0).unwrap();
     call_service.migrate(deps, env, msg)
 }
