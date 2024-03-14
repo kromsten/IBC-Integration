@@ -1,4 +1,3 @@
-use cosmwasm_std::Order;
 use cw_common::xcall_connection_msg::ChannelConfig;
 use cw_storage_plus::Map;
 use cw_xcall_lib::network_address::NetId;
@@ -7,6 +6,9 @@ use crate::types::{
     config::Config, connection_config::ConnectionConfig,
     network_fees::NetworkFees,
 };
+
+use cosmwasm_std::{IbcPacketReceiveMsg, IbcPacketAckMsg, Order};
+
 
 use super::*;
 
@@ -30,8 +32,8 @@ pub const IBC_RES_COUNTER : Item<u64> = Item::new("irc");
 pub const REPLY_COUNTER   : Item<u64> = Item::new("rc");
 
 pub const REPLIES  : Map<u64, Reply> = Map::new("replies");
-pub const IBC_ACKS : Map<u64, CwPacketAckMsg> = Map::new("acks");
-pub const IBC_RES  : Map<u64, CwPacketReceiveMsg> = Map::new("responses");
+pub const IBC_ACKS : Map<u64, IbcPacketAckMsg> = Map::new("acks");
+pub const IBC_RES  : Map<u64, IbcPacketReceiveMsg> = Map::new("responses");
 
 /// The `IbcConfig` struct represents a configuration for inter-blockchain communication with a source
 /// and destination endpoint, and a sequence number.

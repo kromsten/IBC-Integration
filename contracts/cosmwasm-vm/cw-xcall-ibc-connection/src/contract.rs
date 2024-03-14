@@ -5,6 +5,7 @@ use common::{
 use cosmwasm_std::{coins, BankMsg, IbcChannel, Order};
 use cw_common::{raw_types::channel::RawPacket, xcall_connection_msg::ChannelConfig};
 use cw_xcall_lib::network_address::NetId;
+use cosmwasm_std::{IbcPacketReceiveMsg, IbcPacketAckMsg};
 
 use cw_common::cw_println;
 
@@ -283,7 +284,7 @@ impl<'a> CwIbcConnection<'a> {
                     None, 
                     Order::Descending
                 ).map(|r| r.unwrap().1)
-                .collect::<Vec<CwPacketAckMsg>>();
+                .collect::<Vec<IbcPacketAckMsg>>();
                 to_binary(&res)
             },
 
@@ -294,10 +295,11 @@ impl<'a> CwIbcConnection<'a> {
                     None, 
                     Order::Descending
                 ).map(|r| r.unwrap().1)
-                .collect::<Vec<CwPacketReceiveMsg>>();
+                .collect::<Vec<IbcPacketReceiveMsg>>();
                 to_binary(&res)
             },
         }
+
     }
     /// This function handles different types of reply messages and calls corresponding functions based on
     /// the message ID.

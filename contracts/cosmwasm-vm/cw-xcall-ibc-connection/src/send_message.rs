@@ -4,7 +4,7 @@ use cw_xcall_lib::network_address::NetId;
 
 use crate::{
     error::ContractError,
-    state::{CwIbcConnection, IbcConfig},
+    state::{CwIbcConnection, IbcConfig, HOST_SEND_MESSAGE_REPLY_ID},
     types::{message::Message, LOG_PREFIX},
 };
 
@@ -52,7 +52,7 @@ impl<'a> CwIbcConnection<'a> {
             let packet = self.create_request_packet(env, ibc_config, msg.clone())?;
 
             Ok(Response::new()
-                .add_message(CosmosMsg::Ibc(packet))
+                .add_submessage(SubMsg::reply_always(packet, HOST_SEND_MESSAGE_REPLY_ID))
                 .add_attribute("method", "send_message"))
         }
 

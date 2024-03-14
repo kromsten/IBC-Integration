@@ -1,12 +1,11 @@
-use cw_common::cw_println;
-
-use self::state::{IBC_ACKS, IBC_RES};
+use cosmwasm_std::{IbcPacketReceiveMsg, IbcPacketAckMsg, IbcReceiveResponse, IbcBasicResponse};
+use self::state::{IBC_ACKS, IBC_RES, IBC_RES_COUNTER};
 
 use super::*;
 
 /// These are constants used in the IBC (Inter-Blockchain Communication) protocol implementation in the
 /// Rust programming language.
-pub const IBC_VERSION: &str = "ics20-1";
+pub const IBC_VERSION: &str = "ics-xcall";
 pub const APP_ORDER: CwOrder = CwOrder::Ordered;
 
 /// This function handles the opening of an IBC channel and performs some checks before returning a
@@ -127,12 +126,11 @@ pub fn ibc_channel_close(
 pub fn ibc_packet_receive(
     deps: DepsMut,
     _env: Env,
-    msg: CwPacketReceiveMsg,
-) -> Result<CwReceiveResponse, Never> {
-
-    let c = IBC_ACK_COUNTER.load(deps.storage).unwrap_or(0);
+    msg: IbcPacketReceiveMsg,
+) -> Result<IbcReceiveResponse, Never> {
+    let c = IBC_RES_COUNTER.load(deps.storage).unwrap_or(0);
     IBC_RES.save(deps.storage, c, &msg).unwrap();
-
+    IBC_RES_COUNTER.save(deps.storage, &(c + 1)).unwrap();
     Ok(CwReceiveResponse::default())
 
     /* let call_service = CwIbcConnection::default();
@@ -169,12 +167,11 @@ pub fn ibc_packet_receive(
 pub fn ibc_packet_ack(
     deps: DepsMut,
     _env: Env,
-    ack: CwPacketAckMsg,
-) -> Result<CwBasicResponse, ContractError> {
+    ack: IbcPacketAckMsg,
+) -> Result<IbcBasicResponse, ContractError> {
     let c = IBC_ACK_COUNTER.load(deps.storage).unwrap_or(0);
     IBC_ACKS.save(deps.storage, c, &ack).unwrap();
     IBC_ACK_COUNTER.save(deps.storage, &(c + 1)).unwrap();
-    
     return  Ok(CwBasicResponse::default());
 
     /* 
