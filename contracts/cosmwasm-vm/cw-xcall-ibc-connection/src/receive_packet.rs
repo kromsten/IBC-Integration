@@ -4,7 +4,7 @@ use super::*;
 use crate::{ack::make_ack_success, types::message::Message};
 
 use common::rlp;
-use cosmwasm_std::{coins, BankMsg, DepsMut};
+use cosmwasm_std::{coins, from_binary, BankMsg, DepsMut};
 use cw_common::cw_println;
 
 impl<'a> CwIbcConnection<'a> {
@@ -32,7 +32,8 @@ impl<'a> CwIbcConnection<'a> {
         relayer: Addr,
     ) -> Result<CwReceiveResponse, ContractError> {
         let channel = packet.dest.channel_id.clone();
-        let n_message: Message = rlp::decode(&packet.data.0)?;
+        let encoded : Vec<u8> = from_binary(&packet.data)?;
+        let n_message: Message = rlp::decode(&encoded)?;
         let channel_config = self.get_channel_config(deps.as_ref().storage, &channel)?;
         let nid = channel_config.counterparty_nid;
         let denom = self.get_denom(deps.as_ref().storage)?;

@@ -1,5 +1,6 @@
-use common::rlp::Nullable;
+use common::rlp::{self, Nullable};
 use cosmwasm_std::{to_binary, Coin, CosmosMsg, DepsMut, Empty, Env, IbcMsg, IbcTimeout, MessageInfo, Response, Storage, SubMsg, Uint128};
+use cw_common::hex_string::HexString;
 use cw_xcall_lib::network_address::NetId;
 
 use crate::{
@@ -135,10 +136,11 @@ impl<'a> CwIbcConnection<'a> {
     ) -> Result<IbcMsg, ContractError> {
 
         let timeout = IbcTimeout::with_timestamp(env.block.time.plus_seconds(300));
+        let encoded = rlp::encode(&message).to_vec();
 
         Ok(IbcMsg::SendPacket {
             channel_id: ibc_config.src_endpoint().channel_id.clone(),
-            data: to_binary(&message)?,
+            data: to_binary(&encoded)?,
             timeout,
         })
     }

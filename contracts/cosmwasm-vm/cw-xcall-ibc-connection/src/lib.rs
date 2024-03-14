@@ -41,7 +41,7 @@ use cw_common::cw_types::{
 
 use cw_common::xcall_connection_msg::{ExecuteMsg, QueryMsg};
 use cw_storage_plus::Item;
-use state::{IBC_ACKS, IBC_ACK_COUNTER, IBC_RES, IBC_RES_COUNTER, IBC_TOUTS, IBC_TOUT_COUNTER, REPLIES, REPLY_COUNTER};
+use state::{HOST_SEND_MESSAGE_REPLY_ID, IBC_ACKS, IBC_ACK_COUNTER, IBC_RES, IBC_RES_COUNTER, IBC_TOUTS, IBC_TOUT_COUNTER, REPLIES, REPLY_COUNTER};
 use thiserror::Error;
 
 /// This function instantiates a contract using the CwIbcConnection.
@@ -156,12 +156,15 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 /// `Response` or an error of type `ContractError`.
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
-    let c = REPLY_COUNTER.load(deps.storage).unwrap_or(0);
-    REPLIES.save(deps.storage, c, &msg)?;
-    REPLY_COUNTER.save(deps.storage, &(c + 1))?;
-    /* let call_service = CwIbcConnection::default();
-    call_service.reply(deps, env, msg) */
-    Ok(Response::default().set_data(make_ack_success()))
+
+    if msg.id != HOST_SEND_MESSAGE_REPLY_ID {
+        let c = REPLY_COUNTER.load(deps.storage).unwrap_or(0);
+        REPLIES.save(deps.storage, c, &msg)?;
+        REPLY_COUNTER.save(deps.storage, &(c + 1))?;
+    }
+
+    let call_service = CwIbcConnection::default();
+    call_service.reply(deps, env, msg)
 }
 
 #[cw_serde]
