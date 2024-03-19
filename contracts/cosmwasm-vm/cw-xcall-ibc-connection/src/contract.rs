@@ -2,8 +2,9 @@ use common::{
     ibc::{core::ics04_channel::channel::State, Height},
     rlp::{self},
 };
-use cosmwasm_std::{coins, BankMsg, IbcChannel, IbcTimeout, IbcPacketTimeoutMsg, Order};
-use cw_common::{raw_types::channel::RawPacket, xcall_connection_msg::ChannelConfig};
+use cosmwasm_std::{coins, from_binary, BankMsg, IbcChannel, IbcPacketTimeoutMsg, Order};
+use cw_common::{raw_types::channel::RawPacket, types::Ack, xcall_connection_msg::ChannelConfig};
+use cw_xcall::types::{message::CSMessage, response::{CSMessageResponse, CallServiceResponseType}, rlp as rlp_xcall};
 use cw_xcall_lib::network_address::NetId;
 use cosmwasm_std::{IbcPacketReceiveMsg, IbcPacketAckMsg};
 
@@ -412,7 +413,7 @@ impl<'a> CwIbcConnection<'a> {
     ) -> Result<Response, ContractError> {
         println!("{LOG_PREFIX} Reply From Forward XCall");
         match message.result {
-            SubMsgResult::Ok(_) => Ok(Response::new()
+            SubMsgResult::Ok(_) => Ok(Response::new().set_data(make_ack_success())
                 .add_attribute("action", "call_message")
                 .add_attribute("method", "xcall_handle_message_reply")),
             SubMsgResult::Err(error) => Err(ContractError::ReplyError {
@@ -638,9 +639,11 @@ impl<'a> CwIbcConnection<'a> {
         let channel = packet.src.channel_id.clone();
         let seq = packet.sequence;
         let channel_config = self.get_channel_config(deps.as_ref().storage, &channel)?;
+        
         let nid = channel_config.counterparty_nid;
 
-        let submsg = self.call_xcall_handle_message(deps.storage, &nid, acknowledgement.data.0)?;
+        let encoded: Vec<u8>  = from_binary::<Vec<u8>>(&packet.data).unwrap_or(packet.data.0);
+        let n_message: Message = rlp::decode(&encoded)?;
 
         let bank_msg = self.settle_unclaimed_ack_fee(
             deps.storage,
@@ -649,10 +652,26 @@ impl<'a> CwIbcConnection<'a> {
             ack.relayer.to_string(),
         )?;
 
-        Ok(Response::new()
-            .add_messages(bank_msg)
-            .add_submessage(submsg)
-        )
+
+        let ack : Ack = from_binary(&acknowledgement.data)
+                .unwrap_or(Ack::Error(String::from("Invalid Acknowledgement")));
+
+
+        let mut res = Response::new().add_messages(bank_msg);
+
+        let sn = n_message.sn.0.unwrap_or(seq as i64);
+
+        if let Ack::Error(e) = ack {
+            let submsg = self.call_xcall_handle_error(deps.storage, sn)?;
+            res = res.add_submessage(submsg).add_attribute("xcall_ack_error", e);
+        } else {
+            let msg_res = CSMessageResponse::new(sn as u128, CallServiceResponseType::CallServiceResponseSuccess);
+            let msg : CSMessage = msg_res.into();
+            let submsg = self.call_xcall_handle_message(deps.storage, &nid, rlp_xcall::encode(&msg).to_vec())?;
+            res = res.add_message(submsg.msg).add_attribute("xcall_ack_success", "true");
+        }
+     
+        Ok(res)
     }
     /// This function handles a timeout event for an IBC packet and sends a reply message with an error
     /// code.
@@ -677,7 +696,8 @@ impl<'a> CwIbcConnection<'a> {
     ) -> Result<Response, ContractError> {
         let packet = msg.packet;
 
-        let n_message: Message = rlp::decode(&packet.data).unwrap();
+        let encoded : Vec<u8> = from_binary(&packet.data)?;
+        let n_message: Message = rlp::decode(&encoded)?;
 
         if n_message.sn.is_none() {
             return Ok(Response::new());

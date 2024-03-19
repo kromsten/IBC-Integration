@@ -45,6 +45,7 @@ hex={workspace=true}
 debug_print={workspace=true}
 cw-xcall-lib={workspace=true}
 cw-xcall = {workspace=true}
+clap = { version = "4.5.3", features = ["derive"] }
 
 
 

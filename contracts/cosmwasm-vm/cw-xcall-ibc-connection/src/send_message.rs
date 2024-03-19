@@ -1,6 +1,5 @@
 use common::rlp::{self, Nullable};
-use cosmwasm_std::{to_binary, Coin, CosmosMsg, DepsMut, Empty, Env, IbcMsg, IbcTimeout, MessageInfo, Response, Storage, SubMsg, Uint128};
-use cw_common::hex_string::HexString;
+use cosmwasm_std::{to_binary, Coin, DepsMut, Env, IbcMsg, IbcTimeout, MessageInfo, Response, Storage, SubMsg, Uint128};
 use cw_xcall_lib::network_address::NetId;
 
 use crate::{

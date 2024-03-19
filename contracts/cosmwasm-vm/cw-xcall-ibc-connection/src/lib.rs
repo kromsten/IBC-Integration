@@ -181,5 +181,6 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
     IBC_RES_COUNTER.save(deps.storage, &0).unwrap();
     IBC_TOUT_COUNTER.save(deps.storage, &0).unwrap();
     REPLY_COUNTER.save(deps.storage, &0).unwrap();
+    
     call_service.migrate(deps, env, msg)
 }

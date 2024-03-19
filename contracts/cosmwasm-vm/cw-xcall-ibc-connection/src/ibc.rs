@@ -1,5 +1,4 @@
 use cosmwasm_std::{IbcPacketReceiveMsg, IbcPacketAckMsg, IbcReceiveResponse, IbcBasicResponse, IbcPacketTimeoutMsg};
-use cw_common::{cw_println, types::Ack};
 use self::state::{IBC_ACKS, IBC_RES, IBC_RES_COUNTER, IBC_TOUTS, IBC_TOUT_COUNTER};
 
 use super::*;
@@ -172,12 +171,12 @@ pub fn ibc_packet_ack(
     IBC_ACK_COUNTER.save(deps.storage, &(c + 1)).unwrap();
 
     let call_service = CwIbcConnection::default();
-
     let res = call_service.on_packet_ack(deps, ack)?;
 
-    Ok(CwBasicResponse::new()
+     Ok(CwBasicResponse::new()
+        .add_submessages(res.messages)
         .add_attributes(res.attributes)
-        .add_events(res.events))
+        .add_events(res.events)) 
 }
 
 /// This Rust function handles a timeout for an IBC packet and sends a reply message with an error code.
@@ -206,9 +205,7 @@ pub fn ibc_packet_timeout(
     let c = IBC_TOUT_COUNTER.load(deps.storage).unwrap_or(0);
     IBC_TOUTS.save(deps.storage, c, &msg).unwrap();
     IBC_TOUT_COUNTER.save(deps.storage, &(c + 1)).unwrap();
-    Ok(IbcBasicResponse::default())
-    /* 
     let call_service = CwIbcConnection::default();
     let res = call_service.on_packet_timeout(deps, msg)?;
-    Ok(CwBasicResponse::new().add_attributes(res.attributes)) */
+    Ok(CwBasicResponse::new().add_attributes(res.attributes))
 }

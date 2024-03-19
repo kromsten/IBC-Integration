@@ -1,4 +1,4 @@
-use cosmwasm_std::{to_binary, CosmosMsg, Empty, Storage, SubMsg, WasmMsg};
+use cosmwasm_std::{to_binary, CosmosMsg, Empty, StdError, Storage, SubMsg, WasmMsg};
 use cw_xcall_lib::network_address::NetId;
 
 use crate::{
@@ -34,11 +34,11 @@ impl<'a> CwIbcConnection<'a> {
     ) -> Result<SubMsg, ContractError> {
         let xcall_host = self.get_xcall_host(store)?;
         let xcall_msg = cw_xcall_lib::xcall_msg::ExecuteMsg::HandleError {
-            sn: sn.try_into().unwrap(),
+            sn: sn.try_into().map_err(|_| StdError::parse_err("u128", "Error decoding sn"))?,
         };
         let call_message: CosmosMsg<Empty> = CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: xcall_host.to_string(),
-            msg: to_binary(&xcall_msg).unwrap(),
+            msg: to_binary(&xcall_msg)?,
             funds: vec![],
         });
         let sub_msg: SubMsg = SubMsg::reply_always(call_message, XCALL_HANDLE_ERROR_REPLY_ID);

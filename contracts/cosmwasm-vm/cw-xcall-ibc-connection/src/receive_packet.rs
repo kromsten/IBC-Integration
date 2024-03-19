@@ -58,7 +58,6 @@ impl<'a> CwIbcConnection<'a> {
         let xcall_submessage = self.call_xcall_handle_message(deps.storage, &nid, data)?;
 
         Ok(CwReceiveResponse::new()
-            .set_ack(make_ack_success())
             .add_submessage(xcall_submessage)
         )
     }
